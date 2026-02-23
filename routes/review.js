@@ -18,7 +18,7 @@ const validateReview = (req,res,next) =>{
         next(); 
     }
 }
-//reviews
+//reviews 
 router.post("/",validateReview,wrapAsync(async(req,res)=>{
      let listing = await Listing.findById(req.params.id);
      let newReview = new Review(req.body.review);
@@ -27,6 +27,7 @@ router.post("/",validateReview,wrapAsync(async(req,res)=>{
 
      await newReview.save();
      await listing.save();
+     req.flash("success","New Review Created!");
 
      res.redirect(`/listings/${listing._id}`);
 }));
@@ -43,6 +44,7 @@ router.delete("/:reviewId", wrapAsync(async (req, res) => {
 
   // review collection se review delete karo
   await Review.findByIdAndDelete(reviewId);
+  res.flash("success","Review Deleted");
 
   res.redirect(`/listings/${id}`);
 }));
