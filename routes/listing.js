@@ -4,7 +4,7 @@ const wrapAsync = require("../utils/wrapAsync.js");
 const ExpressError = require("../utils/ExpressError.js");
 const { listingSchema, reviewSchema}  = require("../schema.js");
 const Listing = require("../models/listing.js");
-
+const {isLoggedIn} = require("../middleware.js");
 
 
 const validateListing = (req,res,next) =>{
@@ -19,14 +19,13 @@ const validateListing = (req,res,next) =>{
 }; 
 
 router.get("/", async(req,res) =>{
-    const allListings = await Listing.find({});
+    const allListings = await Listing.find({}).lean();
     res.render("listings/index.ejs", {allListings});
 })
 
  //new route
-router.get("/new",(req,res)=>{
+router.get("/new", isLoggedIn, (req,res)=>{
     res.render("listings/new.ejs");
-    
 })
 
 //show route
@@ -41,7 +40,7 @@ router.get("/:id",wrapAsync(async(req,res)=>{
 }));
 
 //create route
-router.post("/",validateListing, wrapAsync(async(req,res,next)=>{
+router.post("/",isLoggedIn,validateListing, wrapAsync(async(req,res,next)=>{
    
     const newListing = new Listing(req.body.listing);
     await newListing.save();
@@ -51,7 +50,7 @@ router.post("/",validateListing, wrapAsync(async(req,res,next)=>{
 );
 
 //edit route
-router.get("/:id/edit",wrapAsync(async(req,res)=>{
+router.get("/:id/edit",isLoggedIn,wrapAsync(async(req,res)=>{
      let {id} = req.params;
     const listing = await  Listing.findById(id);
     if(!listing){
@@ -62,7 +61,7 @@ router.get("/:id/edit",wrapAsync(async(req,res)=>{
 }) )
 
 //update route
-router.put("/:id",validateListing, wrapAsync(async (req, res) => {
+router.put("/:id",isLoggedIn,validateListing, wrapAsync(async (req, res) => {
   
     const { id } = req.params;
   await Listing.findByIdAndUpdate(id, req.body.listing);
@@ -71,12 +70,15 @@ router.put("/:id",validateListing, wrapAsync(async (req, res) => {
 }));
 
 //delete route
-router.delete("/:id", wrapAsync(async(req,res)=>{
-    const {id} = req.params;
-    await Listing.findByIdAndDelete(id);
-    req.flash("success","listing deleted!");
-    res.redirect("/listings");
-})
-);
-
+router.delete("/:id", async (req, res, next) => {
+    try {
+        console.log("DELETE HIT");
+        const { id } = req.params;
+        await Listing.findByIdAndDelete(id);
+        req.flash("success", "listing deleted!");
+        res.redirect("/listings");
+    } catch (err) {
+        next(err);
+    }
+});
 module.exports = router;  

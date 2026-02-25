@@ -44,7 +44,7 @@ router.delete("/:reviewId", wrapAsync(async (req, res) => {
 
   // review collection se review delete karo
   await Review.findByIdAndDelete(reviewId);
-  res.flash("success","Review Deleted");
+  req.flash("success","Review Deleted");
 
   res.redirect(`/listings/${id}`);
 }));
